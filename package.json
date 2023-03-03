@@ -1,0 +1,39 @@
+{
+  "name": "user-management-api",
+  "version": "1.0.0",
+  "description": "Node.js app with MVC architecture implementing a RESTful API for user management. Features include user registration, authentication, role management, and boss changes. Uses Express, Mongoose, and JWT.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --config ./nodemon.json ./index.ts",
+    "start": "ts-node index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/f-honcharenko/user-management-api.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/f-honcharenko/user-management-api/issues"
+  },
+  "homepage": "https://github.com/f-honcharenko/user-management-api#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^7.0.0",
+    "typescript": "^4.9.5"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
+    "@types/body-parser": "^1.19.2",
+    "@types/cors": "^2.8.12",
+    "@types/express": "^4.17.14",
+    "@types/jsonwebtoken": "^8.5.9",
+    "nodemon": "^2.0.20",
+    "ts-node": "^10.9.1"
+  }
+}
