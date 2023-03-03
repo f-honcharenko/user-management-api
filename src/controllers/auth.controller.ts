@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import UserService from "../services/user.service";
 import AuthService from "../services/auth.service";
 import { IUser } from "../models/user.model";
+import { IError } from "../utils/types";
 
 export default class AuthController {
   static async register(req: Request, res: Response) {
@@ -10,7 +11,7 @@ export default class AuthController {
     try {
       const isEmailUsed = await UserService.getUserByEmail(email);
       if (isEmailUsed) {
-        throw new Error("This Email already in use");
+        throw new IError(401, "This Email already in use");
       }
       const user = await UserService.createUser({
         email,
@@ -20,7 +21,7 @@ export default class AuthController {
       const token = AuthService.generateToken(user);
       res.status(201).json({ token, user });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(error.status).json({ error: error.message });
     }
   }
 
@@ -29,7 +30,7 @@ export default class AuthController {
     try {
       const user = await UserService.getUserByEmail(email);
       if (!user) {
-        throw new Error("User does not exits");
+        throw new IError(404, "User does not exits");
       }
 
       const isAuth = await AuthService.comparePasswords(
@@ -37,13 +38,13 @@ export default class AuthController {
         user?.password
       );
       if (!isAuth) {
-        throw new Error("Email or Password wrong");
+        throw new IError(401, "Email or Password wrong");
       }
 
       const token = AuthService.generateToken(user);
       res.status(200).json({ token, user });
     } catch (error: any) {
-      res.status(401).json({ error: error.message });
+      res.status(error.status).json({ error: error.message });
     }
   }
 }

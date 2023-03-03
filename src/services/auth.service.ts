@@ -1,6 +1,7 @@
-import jwt, { decode } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { IUser } from "../models/user.model";
+import { IError } from "../utils/types";
 
 const JWT_SECRET = process.env.JWT_SECRET || "jwt_secret";
 
@@ -13,7 +14,7 @@ export default class AuthService {
       const decoded = jwt.verify(token, JWT_SECRET);
       return decoded as IUser;
     } catch (error) {
-      throw new Error("Invalid token");
+      throw new IError(401, "Invalid token");
     }
   };
 

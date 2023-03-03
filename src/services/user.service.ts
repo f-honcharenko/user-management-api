@@ -1,24 +1,36 @@
-import { Types } from "mongoose";
+import { ProjectionType, ToObjectOptions, Types } from "mongoose";
 
 import UserModel, { IUser, UserRole } from "../models/user.model";
 import AuthService from "./auth.service";
+import { IError } from "../utils/types";
 
 export default class UserService {
   static createUser = async (user: IUser): Promise<IUser> => {
+    // if (user.role != UserRole.ADMIN && !user.boss) {
+    //   throw new Error(
+    //     "Every user except the administrator should have a boss."
+    //   );
+    // }
     user.password = await AuthService.hashPassword(user.password);
     user = new UserModel(user);
 
     return (await user.save()).toObject();
   };
-  static getUserById = async (userId: string): Promise<IUser> => {
-    const user = await UserModel.findById(userId);
+  static getUserById = async (
+    userId: string,
+    projection?: ProjectionType<IUser>
+  ): Promise<IUser> => {
+    const user = await UserModel.findById(userId, projection);
     if (!user) {
-      throw new Error("User does not exist");
+      throw new IError(404, "User does not exist");
     }
     return user.toObject();
   };
-  static getUserByEmail = async (email: string): Promise<IUser | null> => {
-    const user = await UserModel.findOne({ email });
+  static getUserByEmail = async (
+    email: string,
+    projection?: ProjectionType<IUser>
+  ): Promise<IUser | null> => {
+    const user = await UserModel.findOne({ email }, projection);
     if (!user) {
       return null;
     }
@@ -31,42 +43,65 @@ export default class UserService {
     return UserModel.findByIdAndUpdate(
       userId,
       { boss: new Types.ObjectId(newBossId) },
-      { new: true }
+      {
+        new: true,
+        select: {
+          _id: true,
+          email: true,
+          role: true,
+          boss: true,
+        },
+      }
     );
   };
-  static getUsers = async (userId: string): Promise<IUser[]> => {
-    const user = await UserModel.findById(userId);
+  static getUsers = async (
+    userId: string,
+
+    projection?: ProjectionType<IUser>
+  ): Promise<IUser[]> => {
+    const user = await UserModel.findById(userId, projection);
     if (!user) {
-      throw new Error("User does not exist");
+      throw new IError(404, "User does not exist");
     }
 
     if (user.role === UserRole.ADMIN) {
-      const users = await UserModel.find();
+      const users = await UserModel.find({}, projection);
       return users.map((user) => user.toObject());
     }
+
     if (user.role === UserRole.BOSS) {
-      const subordinates = await UserModel.find({ boss: user._id });
+      const subordinates = await UserModel.find({ boss: user._id }, projection);
       const subordinateObjects = await Promise.all(
         subordinates.map(async (subordinate) => {
           const recursiveSubordinates = await getRecursiveSubordinates(
-            subordinate._id
+            subordinate._id,
+            projection
           );
-          return [subordinate.toObject(), ...recursiveSubordinates];
+          return [
+            subordinate.toObject(projection as ToObjectOptions),
+            ...recursiveSubordinates,
+          ];
         })
       );
-      return subordinateObjects.flat();
+      const list = subordinateObjects.flat();
+      list.push(user);
+      return list;
     }
-    return [user.toObject()];
+
+    return [user.toObject(projection as ToObjectOptions)];
   };
 }
 
-const getRecursiveSubordinates = async (userId: string): Promise<IUser[]> => {
+const getRecursiveSubordinates = async (
+  userId: string,
+  projection: any
+): Promise<IUser[]> => {
   const user = await UserModel.findById(userId);
   if (!user) {
-    throw new Error("User does not exist");
+    throw new IError(404, "User does not exist");
   }
 
-  const subordinates = await UserModel.find({ boss: user._id });
+  const subordinates = await UserModel.find({ boss: user._id }, projection);
   if (!subordinates.length) {
     return [];
   }
@@ -74,11 +109,12 @@ const getRecursiveSubordinates = async (userId: string): Promise<IUser[]> => {
   const subordinateObjects = await Promise.all(
     subordinates.map(async (subordinateObject) => {
       const recursiveSubordinates = await getRecursiveSubordinates(
-        subordinateObject._id
+        subordinateObject._id,
+        projection
       );
-      const subordinate = await UserModel.findById(subordinateObject._id);
-      return [subordinateObject.toObject(), ...recursiveSubordinates];
+      return [subordinateObject.toObject(projection), ...recursiveSubordinates];
     })
   );
+
   return subordinateObjects.flat();
 };
