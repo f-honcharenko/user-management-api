@@ -8,6 +8,10 @@ export default class AuthController {
   static async register(req: Request, res: Response) {
     const { email, password, role } = req.body;
     try {
+      const isEmailUsed = await UserService.getUserByEmail(email);
+      if (isEmailUsed) {
+        throw new Error("This Email already in use");
+      }
       const user = await UserService.createUser({
         email,
         password,
@@ -24,6 +28,10 @@ export default class AuthController {
     const { email, password } = req.body;
     try {
       const user = await UserService.getUserByEmail(email);
+      if (!user) {
+        throw new Error("User does not exits");
+      }
+
       const isAuth = await AuthService.comparePasswords(
         password,
         user?.password
@@ -31,6 +39,7 @@ export default class AuthController {
       if (!isAuth) {
         throw new Error("Email or Password wrong");
       }
+
       const token = AuthService.generateToken(user);
       res.status(200).json({ token, user });
     } catch (error: any) {

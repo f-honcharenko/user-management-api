@@ -4,7 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { ConnectOptions, connect } from "mongoose";
 import { json, urlencoded } from "body-parser";
-import { authRouter } from "./routes";
+import { authRouter, userRouter } from "./routes";
 
 dotenv.config();
 
@@ -24,8 +24,7 @@ app.use(bodyParser.json());
 
 // Routes
 app.use("/auth", authRouter);
-// app.use("/users", userRouter);
-// app.use("/bosses", bossRouter);
+app.use("/users", userRouter);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

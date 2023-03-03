@@ -5,10 +5,6 @@ import AuthService from "./auth.service";
 
 export default class UserService {
   static createUser = async (user: IUser): Promise<IUser> => {
-    const isEmailUsed = await this.getUserByEmail(user.email);
-    if (isEmailUsed) {
-      throw new Error("This Email already in use");
-    }
     user.password = await AuthService.hashPassword(user.password);
     user = new UserModel(user);
 
@@ -21,10 +17,10 @@ export default class UserService {
     }
     return user.toObject();
   };
-  static getUserByEmail = async (userEmail: string): Promise<IUser> => {
-    const user = await UserModel.findOne({ email: userEmail });
+  static getUserByEmail = async (email: string): Promise<IUser | null> => {
+    const user = await UserModel.findOne({ email });
     if (!user) {
-      throw new Error("User does not exist");
+      return null;
     }
     return user.toObject();
   };
